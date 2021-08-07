@@ -1,0 +1,170 @@
+---
+title: "Cyclistic Case Study"
+author: "Daniel Flores"
+date: "8/6/2021"
+output: html_document
+---
+
+### The Question : How do annual memmbers and casual riders use Cyclistic bikes differently?
+
+Scenario: I want to help the Marketing Director (Moreno), understand how the two usertypes use our bikes differently to design marketing strategies aimed at converting casual riders into annual members to support future growth. We are looking at historical bike trip data to identify differences.
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+install.packages("tidyverse")
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(readr)
+q2_2019 = read_csv("Divvy_Trips_2019_Q2.csv")
+q3_2019 = read_csv("Divvy_Trips_2019_Q3 2.csv")
+q4_2019 = read_csv("Divvy_Trips_2019_Q4.csv")
+q1_2020 = read_csv("Divvy_Trips_2020_Q1.csv")
+
+(q4_2019 = rename(q4_2019,
+  ride_id = trip_id,
+  rideable_type = bikeid, 
+  started_at = start_time,  
+  ended_at = end_time,  
+  start_station_name = from_station_name, 
+  start_station_id = from_station_id, 
+  end_station_name = to_station_name, 
+  end_station_id = to_station_id,
+  member_casual = usertype))
+
+(q3_2019 = rename(q3_2019,
+  ride_id = trip_id,
+  rideable_type = bikeid, 
+  started_at = start_time,  
+  ended_at = end_time,  
+  start_station_name = from_station_name, 
+  start_station_id = from_station_id, 
+  end_station_name = to_station_name, 
+  end_station_id = to_station_id,
+  member_casual = usertype))
+
+(q2_2019 = rename(q2_2019,
+  ride_id = "01 - Rental Details Rental ID",
+  rideable_type = "01 - Rental Details Bike ID", 
+  started_at = "01 - Rental Details Local Start Time",  
+  ended_at = "01 - Rental Details Local End Time",  
+  start_station_name = "03 - Rental Start Station Name", 
+  start_station_id = "03 - Rental Start Station ID",
+  end_station_name = "02 - Rental End Station Name", 
+  end_station_id = "02 - Rental End Station ID",
+  member_casual = "User Type"))
+
+q4_2019 =  mutate(q4_2019, ride_id = as.character(ride_id)
+                   ,rideable_type = as.character(rideable_type))
+q3_2019 =  mutate(q3_2019, ride_id = as.character(ride_id)
+                   ,rideable_type = as.character(rideable_type))
+q2_2019 =  mutate(q2_2019, ride_id = as.character(ride_id)
+                   ,rideable_type = as.character(rideable_type))
+
+trips_data = bind_rows(q2_2019,q3_2019,q4_2019,q1_2020)
+
+trips_data = trips_data %>%  
+  select(-c(start_lat, start_lng, end_lat, end_lng, birthyear, gender, "01 - Rental Details Duration In Seconds Uncapped", "05 - Member Details Member Birthday Year", "Member Gender", "tripduration"))
+
+trips_data = trips_data %>% 
+  mutate(member_casual = recode(member_casual,
+    "Subscriber" = "member",
+    "Customer" = "casual"))
+  table(trips_data$member_casual)
+
+trips_data$date = as.Date(trips_data$started_at)
+trips_data$month = format(as.Date(trips_data$date), "%m")
+trips_data$day = format(as.Date(trips_data$date), "%d")
+trips_data$year = format(as.Date(trips_data$date), "%Y")
+trips_data$day_of_week = format(as.Date(trips_data$date), "%A")
+trips_data$ride_length = difftime(trips_data$ended_at,trips_data$started_at)
+
+trips_data$ride_length <- as.numeric(as.character(trips_data$ride_length))
+
+divvy_trips = trips_data[!(trips_data$start_station_name == "HQ QR" | trips_data$ride_length<0),]
+```
+
+### The Data
+Cyclistic Bike Trips
+```{r The Data, echo=FALSE, message=TRUE, warning=FALSE, paged.print=FALSE}
+colnames(divvy_trips)
+dim(divvy_trips)
+head(divvy_trips)
+```
+
+### Descriptivee Analysis
+summary of divvy_trips by ride_length (average ride, median, longest ride, shortest ride)
+```{r descriptive, echo=FALSE, message=TRUE, warning=FALSE, paged.print=FALSE}
+#average ride
+mean(divvy_trips$ride_length) 
+#midpoint number in the ascending array of ride lengths
+median(divvy_trips$ride_length) 
+#longest ride
+max(divvy_trips$ride_length)
+#shortest ride
+min(divvy_trips$ride_length)
+```
+
+#### Summary of trips by ride length and user type.
+```{r aggregate summary, echo=FALSE, message=TRUE, warning=FALSE, paged.print=FALSE}
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual, FUN = mean)
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual, FUN = median)
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual, FUN = max)
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual, FUN = min)
+```
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual + divvy_trips$day_of_week, FUN = mean)
+divvy_trips$day_of_week <- ordered(divvy_trips$day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+```
+#### Average trip by day of the week.
+```{r trip by day, echo=FALSE, message=TRUE, warning=FALSE, paged.print=FALSE}
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual + divvy_trips$day_of_week, FUN = mean)
+```
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+divvy_trips %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>%      
+                  group_by(member_casual, weekday) %>%       
+                  summarise(number_of_rides = n(),				  
+                  average_duration = mean(ride_length)) %>%  
+                  arrange(member_casual, weekday)	
+```
+### PLOTS
+"Number of Rides per Day" - The figure shows the results of the numner of rides per user type broken down by the day of the week. We see that members are using our bikes far more than casual riders on a daily basis. 
+```{r echo=FALSE, message=TRUE, warning=FALSE, paged.print=FALSE}
+divvy_trips %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+    summarise(number_of_rides = n(),
+  average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") + 
+  labs(title = "Number of Rides per Day", subtitle = "Member vs Casual")
+
+
+divvy_trips %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+    summarise(number_of_rides = n(),
+  average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(title = "Average Ride Length", subtitle = "Member vs Casual")
+```
+"Ave Ride Length" - The figure shows the difference in average ride lenght between members and casual riders by the day of the week. We see that on a daily basis, casual riders are riding our bikes for longer periods of time than our annual members. 
+
+### Conclusion
+We removed any identifying data from our dataset and relied on individual ride count. Member ride count is oveer 2 million more rides in the past year.  
+  *Member rides: 2973868
+  *Casual rides: 906954
+  
+Members are riding bikes more, every day of the week, but for shorter lengths of time. Members number of rides per day is higher during the week. This indicates that the trend amongst members is to ride our bikes for work. 
+
+Casual riders are not using bikes as much, every day of the week, but the average ride lenght of a casual rider is 3X longer that that of our members. The number of rides per day for casual riders are higher during the weekend. This shows that casual riders are riding our bikes for fun, for longer periods of time. 
+
+#### Recommendations
+* Start planing for Marketing towards casual riders and add different benefits for weekend use of bikes. 
+* Add different membership options. Some that could benefit weekend riders and longer distance riders.
+
+#### Further analysis 
+Cyclistic has a number diffirent types of bikes to accomadate our riders. I would like to collect more data on what types of bikes aree being used more and by who, members or casual riders. I would also like to collect some more data on the geotracking of the bikes to look at what locations we have higher ride counts and averages. 
