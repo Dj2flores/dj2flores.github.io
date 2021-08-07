@@ -1,0 +1,160 @@
+# Setting Up
+install.packages("tidyverse")
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(readr)
+
+# Updating Divvy datasets
+q2_2019 = read_csv("Divvy_Trips_2019_Q2.csv")
+q3_2019 = read_csv("Divvy_Trips_2019_Q3 2.csv")
+q4_2019 = read_csv("Divvy_Trips_2019_Q4.csv")
+q1_2020 = read_csv("Divvy_Trips_2020_Q1.csv")
+
+# CLEAN DATA
+
+#Compare column names(Col names dont match)
+colnames(q2_2019)
+colnames(q3_2019)
+colnames(q4_2019)
+colnames(q1_2020)
+
+# Renaming column names to match
+(q4_2019 = rename(q4_2019,
+  ride_id = trip_id,
+  rideable_type = bikeid, 
+  started_at = start_time,  
+  ended_at = end_time,  
+  start_station_name = from_station_name, 
+  start_station_id = from_station_id, 
+  end_station_name = to_station_name, 
+  end_station_id = to_station_id,
+  member_casual = usertype))
+
+(q3_2019 = rename(q3_2019,
+  ride_id = trip_id,
+  rideable_type = bikeid, 
+  started_at = start_time,  
+  ended_at = end_time,  
+  start_station_name = from_station_name, 
+  start_station_id = from_station_id, 
+  end_station_name = to_station_name, 
+  end_station_id = to_station_id,
+  member_casual = usertype))
+
+(q2_2019 = rename(q2_2019,
+  ride_id = "01 - Rental Details Rental ID",
+  rideable_type = "01 - Rental Details Bike ID", 
+  started_at = "01 - Rental Details Local Start Time",  
+  ended_at = "01 - Rental Details Local End Time",  
+  start_station_name = "03 - Rental Start Station Name", 
+  start_station_id = "03 - Rental Start Station ID",
+  end_station_name = "02 - Rental End Station Name", 
+  end_station_id = "02 - Rental End Station ID",
+  member_casual = "User Type"))
+
+# comparing column names
+str(q1_2020)
+str(q4_2019)
+str(q3_2019)
+str(q2_2019)
+
+# Mutate data to match 
+q4_2019 =  mutate(q4_2019, ride_id = as.character(ride_id)
+                   ,rideable_type = as.character(rideable_type))
+q3_2019 =  mutate(q3_2019, ride_id = as.character(ride_id)
+                   ,rideable_type = as.character(rideable_type))
+q2_2019 =  mutate(q2_2019, ride_id = as.character(ride_id)
+                   ,rideable_type = as.character(rideable_type))
+
+# Combining(binding) all dataframes
+trips_data = bind_rows(q2_2019,q3_2019,q4_2019,q1_2020)
+
+# Removing the following columns
+trips_data = trips_data %>%  
+  select(-c(start_lat, start_lng, end_lat, end_lng, birthyear, gender, "01 - Rental Details Duration In Seconds Uncapped", "05 - Member Details Member Birthday Year", "Member Gender", "tripduration"))
+
+colnames(trips_data)  #List of column names
+nrow(trips_data)  #How many rows are in data frame?
+dim(trips_data)  #Dimensions of the data frame?
+head(trips_data)  #See the first 6 rows of data frame.  Also tail(qs_raw)
+str(trips_data)  #See list of columns and data types (numeric, character, etc)
+summary(trips_data)  #Statistical summary of data. Mainly for numerics
+
+# Change Subscriber/Customer to match member/casual
+trips_data = trips_data %>% 
+  mutate(member_casual = recode(member_casual,
+    "Subscriber" = "member",
+    "Customer" = "casual"))
+  table(trips_data$member_casual)
+
+# Adding more columns with M/D/Y data type to aggregate 
+trips_data$date = as.Date(trips_data$started_at)
+trips_data$month = format(as.Date(trips_data$date), "%m")
+trips_data$day = format(as.Date(trips_data$date), "%d")
+trips_data$year = format(as.Date(trips_data$date), "%Y")
+trips_data$day_of_week = format(as.Date(trips_data$date), "%A")
+# Adding ride length(end - start time)
+trips_data$ride_length = difftime(trips_data$ended_at,trips_data$started_at)
+
+str(trips_data)
+
+trips_data$ride_length <- as.numeric(as.character(trips_data$ride_length))
+
+str(trips_data)
+
+# Removing negative ride length times and removed bikes(BAD DATA)
+divvy_trips = trips_data[!(trips_data$start_station_name == "HQ QR" | trips_data$ride_length<0),]
+
+colnames(divvy_trips)
+head(divvy_trips)
+
+# Descriptivee Analysis
+
+summary(divvy_trips$ride_length)
+mean(divvy_trips$ride_length) #average (total ride length / rides)
+median(divvy_trips$ride_length) #midpoint number in the ascending array of ride lengths
+max(divvy_trips$ride_length) #longest ride
+min(divvy_trips$ride_length) #shortest ride
+
+# compare: members and casuals
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual, FUN = mean)
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual, FUN = median)
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual, FUN = max)
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual, FUN = min)
+# compare members and casuals ride length by day 
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual + divvy_trips$day_of_week, FUN = mean)
+# organizing the days of the week
+divvy_trips$day_of_week <- ordered(divvy_trips$day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+# compare members and casuals ride length by day V2
+aggregate(divvy_trips$ride_length ~ divvy_trips$member_casual + divvy_trips$day_of_week, FUN = mean)
+
+#Analyze by member/casual and day
+divvy_trips %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>%       #creates weekday field using wday()
+                  group_by(member_casual, weekday) %>%       
+                  summarise(number_of_rides = n(),				   #calculates the number of rides 
+                  average_duration = mean(ride_length)) %>%  # calculates the average duration
+                  arrange(member_casual, weekday)	
+
+# ggplot by member/casual
+divvy_trips %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+    summarise(number_of_rides = n(),
+  average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") + 
+  labs(title = "Number of Rides per Day", subtitle = "Member vs Casual")
+
+# ggplot by average ride length
+divvy_trips %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+    summarise(number_of_rides = n(),
+  average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(title = "Average Ride Length", subtitle = "Member vs Casual")
