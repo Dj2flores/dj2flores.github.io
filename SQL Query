@@ -1,0 +1,168 @@
+-- combined all four tables together 
+SELECT 'Subscriber' AS User,
+-- Parsing out Subscribers
+    COUNT(user_type) AS Count,
+    avg(ride_length) AS Average_Ride,
+    MIN(ride_length) AS Minimum_Ride,
+    MAX(ride_length) AS Maximum_Ride,
+-- Figuring out MODE of day_of_week by subscriber by checking the count of day_of_week, ordering it in DESC order and only showing the top one.
+    (SELECT
+        day_of_week,
+    FROM 
+        `casestudy-cyclist.divvy_tripdata.divvy_trips_2019_Q2`
+    WHERE 
+        user_type = "Subscriber"
+    GROUP BY day_of_week
+    ORDER BY COUNT(*) DESC
+    LIMIT    1)
+FROM 
+    `casestudy-cyclist.divvy_tripdata.divvy_trips_2019_Q2`
+WHERE
+    user_type = "Subscriber"
+UNION ALL
+-- Parsing out Customers
+SELECT 'Customer' AS User,
+    COUNT(user_type) AS Count,
+    AVG(ride_length) AS Average_Ride,
+    MIN(ride_length) AS Minimum_Ride,
+    MAX(ride_length) AS Maximum_Ride,
+-- Figuring out MODE of day_of_week by Customers by checking the count of day_of_week, ordering it in DESC order and only showing the top one.
+    (SELECT
+        day_of_week,
+    FROM 
+        `casestudy-cyclist.divvy_tripdata.divvy_trips_2019_Q2`
+    WHERE 
+        user_type = "Customer"
+    GROUP BY day_of_week
+    ORDER BY COUNT(*) DESC
+    LIMIT    1)
+FROM  
+    `casestudy-cyclist.divvy_tripdata.divvy_trips_2019_Q2`
+WHERE 
+    user_type = "Customer"
+UNION ALL 
+SELECT 'Subscriber' AS User,
+-- Parsing out Subscribers
+    COUNT(user_type) AS Count,
+    avg(ride_length) AS Average_Ride,
+    MIN(ride_length) AS Minimum_Ride,
+    MAX(ride_length) AS Maximum_Ride,
+-- Figuring out MODE of day_of_week by subscriber by checking the count of day_of_week, ordering it in DESC order and only showing the top one.
+    (SELECT
+        day_of_week,
+    FROM 
+        `casestudy-cyclist.divvy_tripdata.divvy_trips_2019_Q3`
+    WHERE 
+        user_type = "Subscriber"
+    GROUP BY day_of_week
+    ORDER BY COUNT(*) DESC
+    LIMIT    1)
+FROM 
+    `casestudy-cyclist.divvy_tripdata.divvy_trips_2019_Q3`
+WHERE
+    user_type = "Subscriber"
+UNION ALL
+-- Parsing out Customers
+SELECT 'Customer' AS User,
+    COUNT(user_type) AS Count,
+    AVG(ride_length) AS Average_Ride,
+    MIN(ride_length) AS Minimum_Ride,
+    MAX(ride_length) AS Maximum_Ride,
+-- Figuring out MODE of day_of_week by Customers by checking the count of day_of_week, ordering it in DESC order and only showing the top one.
+    (SELECT
+        day_of_week,
+    FROM 
+        `casestudy-cyclist.divvy_tripdata.divvy_trips_2019_Q3`
+    WHERE 
+        user_type = "Customer"
+    GROUP BY day_of_week
+    ORDER BY COUNT(*) DESC
+    LIMIT    1)
+FROM  
+    `casestudy-cyclist.divvy_tripdata.divvy_trips_2019_Q3`
+WHERE 
+    user_type = "Customer"
+UNION ALL 
+SELECT 'Subscriber' AS User,
+-- Parsing out Subscribers
+    COUNT(user_type) AS Count,
+    avg(ride_length) AS Average_Ride,
+    MIN(ride_length) AS Minimum_Ride,
+    MAX(ride_length) AS Maximum_Ride,
+-- Figuring out MODE of day_of_week by subscriber by checking the count of day_of_week, ordering it in DESC order and only showing the top one.
+    (SELECT
+        day_of_week,
+    FROM 
+        `casestudy-cyclist.divvy_tripdata.divvy_ttrips_2019_Q4`
+    WHERE 
+        user_type = "Subscriber"
+    GROUP BY day_of_week
+    ORDER BY COUNT(*) DESC
+    LIMIT    1)
+FROM 
+    `casestudy-cyclist.divvy_tripdata.divvy_ttrips_2019_Q4`
+WHERE
+    user_type = "Subscriber"
+UNION ALL
+-- Parsing out Customers
+SELECT 'Customer' AS User,
+    COUNT(user_type) AS Count,
+    AVG(ride_length) AS Average_Ride,
+    MIN(ride_length) AS Minimum_Ride,
+    MAX(ride_length) AS Maximum_Ride,
+-- Figuring out MODE of day_of_week by Customers by checking the count of day_of_week, ordering it in DESC order and only showing the top one.
+    (SELECT
+        day_of_week,
+    FROM 
+        `casestudy-cyclist.divvy_tripdata.divvy_ttrips_2019_Q4`
+    WHERE 
+        user_type = "Customer"
+    GROUP BY day_of_week
+    ORDER BY COUNT(*) DESC
+    LIMIT    1)
+FROM  
+    `casestudy-cyclist.divvy_tripdata.divvy_ttrips_2019_Q4`
+WHERE 
+    user_type = "Customer"
+UNION ALL 
+SELECT 'Subscriber' AS User,
+-- Parsing out Subscribers
+    COUNT(user_type) AS Count,
+    avg(ride_length) AS Average_Ride,
+    MIN(ride_length) AS Minimum_Ride,
+    MAX(ride_length) AS Maximum_Ride,
+-- Figuring out MODE of day_of_week by subscriber by checking the count of day_of_week, ordering it in DESC order and only showing the top one.
+    (SELECT
+        day_of_week,
+    FROM 
+        `casestudy-cyclist.divvy_tripdata.divvy_trips_2020_Q1`
+    WHERE 
+        user_type = "Subscriber"
+    GROUP BY day_of_week
+    ORDER BY COUNT(*) DESC
+    LIMIT    1)
+FROM 
+    `casestudy-cyclist.divvy_tripdata.divvy_trips_2020_Q1`
+WHERE
+    user_type = "Subscriber"
+UNION ALL
+-- Parsing out Customers
+SELECT 'Customer' AS User,
+    COUNT(user_type) AS Count,
+    AVG(ride_length) AS Average_Ride,
+    MIN(ride_length) AS Minimum_Ride,
+    MAX(ride_length) AS Maximum_Ride,
+-- Figuring out MODE of day_of_week by Customers by checking the count of day_of_week, ordering it in DESC order and only showing the top one.
+    (SELECT
+        day_of_week,
+    FROM 
+        `casestudy-cyclist.divvy_tripdata.divvy_trips_2020_Q1`
+    WHERE 
+        user_type = "Customer"
+    GROUP BY day_of_week
+    ORDER BY COUNT(*) DESC
+    LIMIT    1)
+FROM  
+    `casestudy-cyclist.divvy_tripdata.divvy_trips_2020_Q1`
+WHERE 
+    user_type = "Customer"
